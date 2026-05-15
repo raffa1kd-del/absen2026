@@ -518,6 +518,11 @@ async function deleteRecordByStaffDate(staffId, date) {
 async function bootstrap() {
   try {
     await loadStaff();
+    // Restore selectedStaffId dari sessionStorage SEBELUM listener jalan
+    const saved = sessionStorage.getItem('selected_staff');
+    if (saved && allStaff.find(x=>x.id===saved)) {
+      selectedStaffId = saved;
+    }
     listenRecords();
     document.getElementById('fb-loading').style.display = 'none';
     initMode();
@@ -556,20 +561,20 @@ function showPage(id) {
   document.getElementById(id)?.classList.add('active');
 }
 function initUserApp() {
-  // Restore staff yang dipilih sebelumnya
   const saved = sessionStorage.getItem('selected_staff');
-  if (saved) {
-    selectedStaffId = saved;
-    // Tunggu staff loaded lalu langsung ke halaman absen
-    const s = allStaff.find(x=>x.id===selectedStaffId);
+  if (saved && allStaff.length > 0) {
+    const s = allStaff.find(x=>x.id===saved);
     if (s) {
+      selectedStaffId = saved;
       document.getElementById('absen-name').textContent = s.name + ' 🔥';
       showPage('page-absen');
       checkTodayAbsen(); updateSummary(); renderHistory();
       return;
     }
   }
-  showPage('page-pick'); renderStaffGrid();
+  selectedStaffId = null;
+  showPage('page-pick');
+  renderStaffGrid();
 }
 
 window.renderStaffGrid = function() {
