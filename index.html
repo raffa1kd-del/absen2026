@@ -555,7 +555,22 @@ function showPage(id) {
   document.querySelectorAll('#user-app .page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
 }
-function initUserApp() { showPage('page-pick'); renderStaffGrid(); }
+function initUserApp() {
+  // Restore staff yang dipilih sebelumnya
+  const saved = sessionStorage.getItem('selected_staff');
+  if (saved) {
+    selectedStaffId = saved;
+    // Tunggu staff loaded lalu langsung ke halaman absen
+    const s = allStaff.find(x=>x.id===selectedStaffId);
+    if (s) {
+      document.getElementById('absen-name').textContent = s.name + ' 🔥';
+      showPage('page-absen');
+      checkTodayAbsen(); updateSummary(); renderHistory();
+      return;
+    }
+  }
+  showPage('page-pick'); renderStaffGrid();
+}
 
 window.renderStaffGrid = function() {
   const q = (document.getElementById('pick-search')?.value||'').toLowerCase();
@@ -570,7 +585,7 @@ window.renderStaffGrid = function() {
   document.getElementById('btn-pick').style.display = selectedStaffId ? 'flex' : 'none';
 };
 
-window.pickStaff = function(id) { selectedStaffId = id; renderStaffGrid(); };
+window.pickStaff = function(id) { selectedStaffId = id; sessionStorage.setItem('selected_staff', id); renderStaffGrid(); };
 
 window.doPickStaff = function() {
   if(!selectedStaffId) return showToast('Pilih namamu dulu!');
