@@ -188,12 +188,9 @@
 
     <!-- FORM ABSEN -->
     <div class="page" id="page-absen">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div>
-          <div style="font-size:0.8rem;color:var(--gray-400);font-weight:600;">Absen untuk</div>
-          <div class="section-title" id="absen-name" style="margin-bottom:0;"></div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="backToPick()">← Ganti</button>
+      <div style="margin-bottom:20px;">
+        <div style="font-size:0.8rem;color:var(--gray-400);font-weight:600;">Absen untuk</div>
+        <div class="section-title" id="absen-name" style="margin-bottom:0;"></div>
       </div>
       <div class="time-display">
         <div class="time-clock" id="clock">00:00:00</div>
@@ -231,7 +228,6 @@
               <div id="already-detail" style="font-size:0.78rem;opacity:0.8;margin-top:2px;"></div>
             </div>
           </div>
-          <button class="btn btn-outline" onclick="backToPick()" style="margin-top:8px;">← Kembali ke daftar</button>
         </div>
       </div>
       <div class="card">
@@ -614,8 +610,38 @@ window.submitAbsen = async function() {
   if(!chip) return showToast('Pilih status dulu!');
   const status = chip.dataset.val;
   const ket = document.getElementById('keterangan-input')?.value || '';
+  const s = allStaff.find(x=>x.id===selectedStaffId);
+
+  // Emoji per status
+  const emojiMap = {Hadir:'✅',Izin:'📋',Sakit:'🤒'};
+  const emoji = emojiMap[status]||'';
+
+  // Tampilkan modal konfirmasi
+  openModal(`
+    <div class="modal-title">Konfirmasi Absensi</div>
+    <div style="background:var(--red-pale);border-radius:14px;padding:18px;text-align:center;margin-bottom:18px;">
+      <div style="font-size:2.2rem;margin-bottom:8px;">${emoji}</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--gray-800);">${s.name}</div>
+      <div style="font-size:0.85rem;color:var(--gray-600);margin-top:4px;">Status: <b style="color:var(--red);">${status}</b></div>
+      ${ket ? `<div style="font-size:0.8rem;color:var(--gray-400);margin-top:4px;">Ket: ${ket}</div>` : ''}
+      <div style="font-size:0.78rem;color:var(--gray-400);margin-top:6px;">${new Date().toLocaleString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--gray-600);text-align:center;margin-bottom:18px;">Pastikan data sudah benar sebelum mengkonfirmasi.</p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="closeModal()" style="flex:1;">Batal</button>
+      <button class="btn btn-primary" onclick="doConfirmAbsen('${status}','${encodeURIComponent(ket)}')" style="flex:1;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Ya, Kirim!
+      </button>
+    </div>
+  `);
+};
+
+window.doConfirmAbsen = async function(status, ketEncoded) {
+  const ket = decodeURIComponent(ketEncoded);
+  window.closeModal();
   const btn = document.querySelector('#absen-form-wrap .btn');
-  btn.classList.add('loading');
+  if(btn) btn.classList.add('loading');
   try {
     const s = allStaff.find(x=>x.id===selectedStaffId);
     await deleteRecordByStaffDate(selectedStaffId, todayStr());
@@ -623,7 +649,7 @@ window.submitAbsen = async function() {
     showToast('✅ Absensi berhasil disimpan!');
     if(document.getElementById('keterangan-input')) document.getElementById('keterangan-input').value='';
   } catch(e) { showToast('❌ Gagal menyimpan, cek koneksi!'); }
-  btn.classList.remove('loading');
+  if(btn) btn.classList.remove('loading');
 };
 
 function updateSummary() {
